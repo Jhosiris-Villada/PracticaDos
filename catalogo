@@ -1,4 +1,4 @@
-% Sintaxis: vehicle(Marca, Referencia, Tipo, Precio, Año)
+/*  Catálogo de vehículos  */
 
 vehicle(toyota, corolla, sedan, 22000, 2022).
 vehicle(toyota, rav4, suv, 28000, 2022).
@@ -10,6 +10,112 @@ vehicle(ford, mustang, sport, 45000, 2023).
 vehicle(bmw, series3, sedan, 40000, 2021).
 vehicle(bmw, x5, suv, 60000, 2021).
 vehicle(bmw, m3, sport, 70000, 2022).
+
+
+/*Filtrar vehículos que cumplan el presupuesto*/
+meet_budget(Reference, BudgetMax) :-
+    vehicle(_, Reference, _, Price, _),
+    Price =< BudgetMax.
+
+
+/*grupar referencias por marca*/
+vehiculos_por_marca(Brand, ListaReferencias) :-
+    findall(Type - Year , vehicle(Brand, Ref, Type, _, Year), ListaReferencias).
+
+
+/*Calcular total del precio de una lista */
+total_precio([], 0).
+total_precio([(_, Price)|T], Total) :-
+    total_precio(T, SubTotal),
+    Total is Price + SubTotal.
+
+
+/*Generar reporte según marca, tipo y presupuesto*/
+generate_report(Brand, Type, Budget, Result) :-
+    findall((Ref, Price),
+        (vehicle(Brand, Ref, Type, Price, _), Price =< Budget),
+        VehiculosFiltrados),
+    total_precio(VehiculosFiltrados, Total),
+    Total =< 1000000,  % Límite de valor del inventario
+    Result = VehiculosFiltrados.
+
+
+/* Caso 1: Listar vehículos Toyota SUV bajo $30,000 */
+caso1(Resultado) :-
+    findall(Ref,
+        (vehicle(toyota, Ref, suv, Price, _), Price < 30000),
+        Resultado).
+
+/* Caso 2: Mostrar vehículos ford agrupados por tipo y año*/
+caso2(Resultado) :-
+    setof((Tipo, Año, Refs),
+        bagof(Ref, vehicle(ford, Ref, Tipo, _, Año), Refs),
+        Resultado).
+
+/* Caso 3: Calcular valor total de Sedanes bajo $ 500,000*/
+caso3(Resultado, Total) :-
+    findall((Ref, Price),
+        (vehicle(_, Ref, sedan, Price, _), Price =< 500000),
+        Resultado),
+    total_precio(Resultado, Total),
+    Total =< 500000.
+
+
+
+menu :-
+    writeln("SISTEMA DE VENTAS DE VEHÍCULOS"),
+    writeln("1. Filtrar vehículos por tipo y presupuesto"),
+    writeln("2. Mostrar vehículos por marca"),
+    writeln("3. Generar reporte filtrado"),
+    writeln("4. Ejecutar casos de prueba"),
+    writeln("5. Salir"),
+    writeln(" "),
+    write("Seleccione una opción (1-5): "), read(Opcion),
+    opcion(Opcion).
+
+opcion(1) :-
+    write("Ingrese el tipo (sedan, suv, sport, pickup): "), read(Type),
+    write("Ingrese el presupuesto máximo: "), read(Budget),
+    findall(Ref, (vehicle(_, Ref, Type, Price, _), Price =< Budget), Lista),
+    writeln("Vehículos encontrados: "), writeln(Lista), nl, menu.
+
+opcion(2) :-
+    write("Ingrese la marca (toyota, ford, bmw): "), read(Brand),
+    vehiculos_por_marca(Brand, Lista),
+    writeln("Referencias encontradas: "), writeln(Lista), nl, menu.
+
+opcion(3) :-
+    write("Marca: "), read(Brand),
+    write("Tipo: "), read(Type),
+    write("Presupuesto por vehículo: "), read(Budget),
+    generate_report(Brand, Type, Budget, Reporte),
+    total_precio(Reporte, Total),
+    writeln("Vehículos filtrados: "), writeln(Reporte),
+    write("Valor total del inventario: $ "), writeln(Total), nl,
+    menu.
+
+opcion(4) :-
+    writeln(" Caso 1: Toyota SUV bajo $30,000 "),
+    caso1(R1), writeln(R1), nl,
+    writeln(" Caso 2: Ford agrupado por tipo y año "),
+    caso2(R2), mostrar_grupos(R2), nl,
+    writeln(" Caso 3: Sedanes bajo $500,000 "),
+    caso3(R3, T3), writeln(R3), write("Total: $ "), writeln(T3), nl,
+    menu.
+
+opcion(5) :-
+    writeln("Gracias por usar este sistema. ¡Hasta luego!").
+
+opcion(_) :-
+    writeln("Opción no valida, intente nuevamente."), nl, menu.
+
+/* Mostrar resultados agrupados (tipo, año, referencias) */
+mostrar_grupos([]).
+mostrar_grupos([(Tipo, Año, Refs)|T]) :-
+    format("Tipo: ~w, Año: ~w~n", [Tipo, Año]),
+    writeln("  Referencias: "), writeln(Refs),
+    nl,
+    mostrar_grupos(T).
 
 
 
